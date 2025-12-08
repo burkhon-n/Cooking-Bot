@@ -388,6 +388,73 @@ async def text_handler(message: types.Message):
         user_states.pop(uid, None)
         return
 
+    # Handle text ingredients list when awaiting_ingredients_photo
+    if st and st.get('state') == 'awaiting_ingredients_photo':
+        # User sent text description of ingredients instead of photo
+        ingredients_text = txt
+        await bot.send_message(message.chat.id, '🔍 Processing your ingredients... this may take a few seconds.')
+        
+        # Call OpenAI to generate recipes from text description
+        if not OPENAI_API_KEY:
+            await bot.send_message(message.chat.id, "I can't access the AI assistant right now.")
+            return
+        
+        from openai import OpenAI
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        
+        def _generate_from_text():
+            try:
+                resp = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a helpful cooking assistant. Generate creative and delicious recipes based on the ingredients provided. Provide clear, step-by-step instructions. Format recipes with clear headers."
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Based on these available ingredients, suggest 2-3 creative recipes I can make:\n\n{ingredients_text}\n\nPlease provide detailed recipes with ingredients and instructions."
+                        }
+                    ],
+                    max_tokens=1000,
+                )
+                return resp.choices[0].message.content.strip()
+            except Exception as e:
+                print(f"OpenAI Error: {e}")
+                return "Sorry, I'm having trouble generating recipes right now. Please try again."
+        
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, _generate_from_text)
+        
+        # Format the response for better readability in Telegram
+        formatted_result = result.replace('###', '🍳').replace('**', '*')
+        
+        # Split long messages if needed (Telegram has 4096 character limit)
+        if len(formatted_result) > 4000:
+            parts = []
+            current_part = ""
+            for line in formatted_result.split('\n'):
+                if len(current_part) + len(line) + 1 > 4000:
+                    parts.append(current_part)
+                    current_part = line + '\n'
+                else:
+                    current_part += line + '\n'
+            if current_part:
+                parts.append(current_part)
+            
+            for part in parts:
+                await bot.send_message(message.chat.id, part, parse_mode='Markdown')
+        else:
+            await bot.send_message(message.chat.id, formatted_result, parse_mode='Markdown')
+        
+        # Create keyboard with home button
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.add(types.KeyboardButton('🏠 Back to Home'))
+        
+        await bot.send_message(message.chat.id, '💬 Ask me anything about these recipes! (cooking tips, substitutions, variations, etc.)', reply_markup=markup)
+        user_states[uid] = {'state': 'chatting_about_recipe', 'recipe_context': result}
+        return
+
     # fallback
     await bot.send_message(message.chat.id, "I didn't understand that. Send /help for available commands.", reply_markup=make_main_keyboard(uid in ADMIN_IDS))
 
