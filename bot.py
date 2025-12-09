@@ -6,6 +6,30 @@ import tempfile
 import asyncio
 from config import BOT_TOKEN, OPENAI_API_KEY, DATA_DIR, ADMIN_IDS
 
+
+def make_openai_client():
+    """Create an OpenAI client while safely handling proxy settings.
+    The OpenAI SDK (>=1.x) does not accept a `proxies` kwarg, so if a proxy is
+    configured via env vars we attach it using httpx instead of passing it
+    directly. This prevents the "unexpected keyword argument 'proxies'" error.
+    """
+    from openai import OpenAI
+    proxy = (
+        os.getenv("OPENAI_PROXY")
+        or os.getenv("HTTPS_PROXY")
+        or os.getenv("https_proxy")
+        or os.getenv("HTTP_PROXY")
+        or os.getenv("http_proxy")
+    )
+
+    if proxy:
+        import httpx
+
+        http_client = httpx.Client(proxies=proxy, timeout=60.0)
+        return OpenAI(api_key=OPENAI_API_KEY, http_client=http_client)
+
+    return OpenAI(api_key=OPENAI_API_KEY)
+
 bot = AsyncTeleBot(BOT_TOKEN)
 
 # simple in-memory state per chat
@@ -63,8 +87,7 @@ async def chat_about_recipe(user_question, recipe_context):
     if not OPENAI_API_KEY:
         return "I can't access the AI assistant right now."
     
-    from openai import OpenAI
-    client = OpenAI(api_key=OPENAI_API_KEY)
+    client = make_openai_client()
     
     def _call_openai():
         try:
@@ -102,10 +125,9 @@ async def generate_recipe_from_image(image_path, chat_id=None):
                 "Please send me a text list of the ingredients instead, "
                 "or set `OPENAI_API_KEY` in your environment.")
 
-    from openai import OpenAI
     import base64
     
-    client = OpenAI(api_key=OPENAI_API_KEY)
+    client = make_openai_client()
 
     def _call_openai():
         try:
@@ -399,8 +421,7 @@ async def text_handler(message: types.Message):
             await bot.send_message(message.chat.id, "I can't access the AI assistant right now.")
             return
         
-        from openai import OpenAI
-        client = OpenAI(api_key=OPENAI_API_KEY)
+        client = make_openai_client()
         
         def _generate_from_text():
             try:
