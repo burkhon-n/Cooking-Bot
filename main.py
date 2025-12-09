@@ -3,8 +3,14 @@ from fastapi import FastAPI, Request
 from bot import bot, types
 from config import WEBHOOK_URL
 import asyncio
+import os
 
 app = FastAPI()
+
+@app.get("/")
+async def root():
+    """Health check endpoint for Render"""
+    return {"status": "ok", "service": "cooking-bot"}
 
 @app.on_event('startup')
 async def start_app():

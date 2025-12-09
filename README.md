@@ -100,6 +100,50 @@ data/            ← Where recipes are saved
 
 ---
 
+## 🌐 Deploy to Render (Recommended for Free Hosting)
+
+Render offers free hosting with persistent storage, perfect for this bot!
+
+### Step 1: Push to GitHub
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/yourusername/cooking-bot.git
+git push -u origin main
+```
+
+### Step 2: Create Render Account
+Go to https://render.com and sign up (free)
+
+### Step 3: Create Web Service
+1. Click **"New +"** → **"Web Service"**
+2. Connect your GitHub repo
+3. Configure:
+   - **Name**: cooking-bot
+   - **Environment**: Python 3
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - **Plan**: Free
+
+### Step 4: Add Environment Variables
+In Render dashboard, add these:
+- `BOT_TOKEN` = your bot token
+- `OPENAI_API_KEY` = your OpenAI key
+- `WEBHOOK_URL` = `https://your-app-name.onrender.com` (Render gives you this)
+- `ADMIN_IDS` = your Telegram user ID
+- `DATA_DIR` = `/opt/render/project/src/data`
+
+### Step 5: Deploy
+Click **"Create Web Service"** - Render will automatically deploy!
+
+Your webhook URL will be: `https://your-app-name.onrender.com/webhook`
+
+**Important**: Free tier spins down after 15 min of inactivity. First message after sleep takes ~30s to wake up.
+
+---
+
 ## 🐳 Docker (Simple Cloud Hosting)
 
 ### Build Image

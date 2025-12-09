@@ -6,6 +6,11 @@ import tempfile
 import asyncio
 from config import BOT_TOKEN, OPENAI_API_KEY, DATA_DIR, ADMIN_IDS
 
+# Clear proxy environment variables that cause conflicts with telebot
+# The bot doesn't need proxies and they cause "unexpected keyword argument 'proxies'" errors
+for proxy_var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']:
+    os.environ.pop(proxy_var, None)
+
 
 def make_openai_client():
     """Create an OpenAI client while safely handling proxy settings.
@@ -14,20 +19,7 @@ def make_openai_client():
     directly. This prevents the "unexpected keyword argument 'proxies'" error.
     """
     from openai import OpenAI
-    proxy = (
-        os.getenv("OPENAI_PROXY")
-        or os.getenv("HTTPS_PROXY")
-        or os.getenv("https_proxy")
-        or os.getenv("HTTP_PROXY")
-        or os.getenv("http_proxy")
-    )
-
-    if proxy:
-        import httpx
-
-        http_client = httpx.Client(proxies=proxy, timeout=60.0)
-        return OpenAI(api_key=OPENAI_API_KEY, http_client=http_client)
-
+    # Don't use proxy for OpenAI calls - we cleared them above
     return OpenAI(api_key=OPENAI_API_KEY)
 
 bot = AsyncTeleBot(BOT_TOKEN)
