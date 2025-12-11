@@ -1,9 +1,38 @@
 from urllib import request
 from fastapi import FastAPI, Request
-from bot import bot, types
-from config import WEBHOOK_URL
 import asyncio
 import os
+
+# CRITICAL: Clear ALL proxy env vars before any other imports
+# This prevents telebot from passing proxies to OpenAI client
+for var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy', 'NO_PROXY', 'no_proxy']:
+    os.environ.pop(var, None)
+
+# Monkeypatch to prevent telebot from using proxies with OpenAI
+import sys
+original_openai_init = None
+
+def patch_openai():
+    """Monkeypatch OpenAI client to reject proxies kwarg"""
+    try:
+        from openai import OpenAI as OriginalOpenAI
+        
+        class PatchedOpenAI(OriginalOpenAI):
+            def __init__(self, *args, **kwargs):
+                # Remove proxies kwarg if present
+                kwargs.pop('proxies', None)
+                super().__init__(*args, **kwargs)
+        
+        # Replace in sys.modules
+        import openai
+        openai.OpenAI = PatchedOpenAI
+    except:
+        pass
+
+patch_openai()
+
+from config import WEBHOOK_URL
+from bot import bot, types
 
 app = FastAPI()
 
