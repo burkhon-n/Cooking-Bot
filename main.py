@@ -8,10 +8,18 @@ import os
 for var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy', 'NO_PROXY', 'no_proxy']:
     os.environ.pop(var, None)
 
-# Monkeypatch to prevent telebot from using proxies with OpenAI
-import sys
-original_openai_init = None
+# Patch requests.Session to not use proxies by default
+import requests
+_original_session = requests.Session
 
+class PatchedSession(requests.Session):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.trust_env = False  # Disable env proxy detection
+
+requests.Session = PatchedSession
+
+# Also patch OpenAI to remove proxies kwarg if passed
 def patch_openai():
     """Monkeypatch OpenAI client to reject proxies kwarg"""
     try:
