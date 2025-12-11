@@ -5,13 +5,26 @@
 
 echo "🚀 Setting up Cooking Bot on Render..."
 
-# Clear proxy environment variables that cause conflicts with telebot
+# CRITICAL: Clear proxy environment variables FIRST
+# These cause "unexpected keyword argument 'proxies'" error in telebot
+export -n HTTP_PROXY
+export -n HTTPS_PROXY
+export -n http_proxy
+export -n https_proxy
+export -n ALL_PROXY
+export -n all_proxy
+export -n NO_PROXY
+export -n no_proxy
+
+# Unset them for this shell too
 unset HTTP_PROXY
 unset HTTPS_PROXY
 unset http_proxy
 unset https_proxy
 unset ALL_PROXY
 unset all_proxy
+unset NO_PROXY
+unset no_proxy
 
 # Create data directory if it doesn't exist
 mkdir -p data

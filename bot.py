@@ -1,15 +1,14 @@
+# MUST be first - clear proxy env vars before any imports to prevent telebot/openai issues
+import os
+for proxy_var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy', 'NO_PROXY', 'no_proxy']:
+    os.environ.pop(proxy_var, None)
+
 from telebot.async_telebot import AsyncTeleBot
 from telebot import types
-import os
 import json
 import tempfile
 import asyncio
 from config import BOT_TOKEN, OPENAI_API_KEY, DATA_DIR, ADMIN_IDS
-
-# Clear proxy environment variables that cause conflicts with telebot
-# The bot doesn't need proxies and they cause "unexpected keyword argument 'proxies'" errors
-for proxy_var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']:
-    os.environ.pop(proxy_var, None)
 
 
 def make_openai_client():

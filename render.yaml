@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     buildCommand: bash setup.sh
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: bash -c 'unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy NO_PROXY no_proxy && uvicorn main:app --host 0.0.0.0 --port $PORT'
     envVars:
       - key: BOT_TOKEN
         sync: false
@@ -19,3 +19,11 @@ services:
         value: /opt/render/project/src/data
       - key: PYTHON_VERSION
         value: 3.13.1
+      - key: HTTP_PROXY
+        value: ""
+      - key: HTTPS_PROXY
+        value: ""
+      - key: http_proxy
+        value: ""
+      - key: https_proxy
+        value: ""
