@@ -5,6 +5,14 @@
 
 echo "🚀 Setting up Cooking Bot on Render..."
 
+# Clear proxy environment variables that cause conflicts with telebot
+unset HTTP_PROXY
+unset HTTPS_PROXY
+unset http_proxy
+unset https_proxy
+unset ALL_PROXY
+unset all_proxy
+
 # Create data directory if it doesn't exist
 mkdir -p data
 
